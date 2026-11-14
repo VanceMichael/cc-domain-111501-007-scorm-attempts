@@ -1,0 +1,35 @@
+{
+  "entry": "/runtime",
+  "documents": [
+    {
+      "id": "calls",
+      "path": "runtime.ndjson",
+      "format": "ndjson",
+      "file": "00.raw",
+      "task": "task-1",
+      "batch": "batch-local",
+      "serviceRoot": "/raw/",
+      "revision": 1
+    },
+    {
+      "id": "continuation",
+      "path": "later.ndjson",
+      "format": "ndjson",
+      "file": "01.raw",
+      "task": "task-1",
+      "batch": "batch-local",
+      "serviceRoot": "/raw/",
+      "revision": 1
+    }
+  ],
+  "changedDocument": "continuation",
+  "replaceFrom": "\"seq\":9",
+  "replaceTo": "\"seq\":9",
+  "expectedIds": [
+    "learner-1:course-1:attempt-1"
+  ],
+  "transmissionWindow": [
+    "2026-10-31T23:00:00Z",
+    "2026-11-01T01:00:00Z"
+  ]
+}

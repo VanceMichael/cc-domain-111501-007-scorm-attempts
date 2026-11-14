@@ -1,0 +1,2 @@
+{"seq":8,"session":"s1","operation":"GetValue","arguments":["cmi.score.raw"],"result":"","error":"403"}
+{"seq":9,"session":"s1","operation":"GetValue","arguments":["cmi.score.raw"],"result":"","error":"0"}
