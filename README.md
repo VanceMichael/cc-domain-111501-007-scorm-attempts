@@ -26,7 +26,11 @@ build逐个检查src、simulator、scripts、test、acceptance内的ESM语法；
 npm run acceptance
 ```
 
-acceptance与基线回归分开。当前预览器尚不产生结构化业务关系，因此其中两项业务断言预期失败；这是新增能力，不是依赖或启动问题。请按协议增加缺件、引用冲突、修订、数据边界及进程终止恢复的测试，不能删断言、固定输出样本答案或让原始证据与规范化结果错位。
+acceptance与基线回归分开，覆盖运行调用生命周期、确认值与工作值分离、跨文档与数组身份、修订只确认一次、缺件/临时失败下的未决保留、ETag 304重投、原始留存后中断再启动，以及独立进程重开存储。实现不依赖固定样本答案。
+
+## 解释层结构
+
+`src/interpreter.mjs`按seq重放调用：Initialize只声明会话并从确认快照恢复工作集，SetValue成功只写工作集，Commit/Terminate成功才替换确认快照，Terminate失败不结束会话。每个attempt最多一个`completion`事实；交互与目标按数组下标归集在所属attempt内，`cmi.location`/`cmi.suspend_data`进入`recovery`。GetValue保留`empty-value`、`uninitialized`、`error`三种观察及顺序。`interpretation.calls`保留原始调用顺序、来源路径、修订与摘要，供管理员逐条核对。不执行课程代码，也不计算成绩。
 
 ## 离线容器
 

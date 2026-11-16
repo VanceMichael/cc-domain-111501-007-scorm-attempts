@@ -45,7 +45,42 @@ export class Repository {
   }
 
   async note(value) {
+    // A keyed note describes one stable observation. Re-delivery of the same
+    // source position must not grow the diagnostic log.
+    if (value?.key && this.state.notes.some(note => note.key === value.key)) return;
     this.state.notes.push(structuredClone(value));
+    await this.save();
+  }
+
+  async raw(digest) {
+    return readFile(join(this.directory, 'raw', digest));
+  }
+
+  evidenceFor(origin) {
+    return Object.entries(this.state.evidence)
+      .filter(([, evidence]) => evidence.origin === origin)
+      .map(([digest, evidence]) => ({ digest, ...structuredClone(evidence) }));
+  }
+
+  async interpret(state) {
+    this.state.interpretation = structuredClone(state);
+    const records = {};
+    for (const id of state.attemptOrder ?? []) {
+      const attempt = state.attempts[id];
+      if (!attempt) continue;
+      // The admin-facing record mirrors the attempt. `confirmed` is what the
+      // platform acknowledged; `working` includes values not yet committed.
+      records[id] = structuredClone(attempt);
+    }
+    // Legacy preview records are owned by `put`, not by the managed
+    // interpretation. Replace only the records this layer manages so old
+    // records (and their raw bytes) stay readable after a managed import.
+    const managed = new Set(this.state.managedIds ?? []);
+    for (const [id, record] of Object.entries(this.state.records)) {
+      if (!managed.has(id) && !(id in records)) records[id] = record;
+    }
+    this.state.records = records;
+    this.state.managedIds = [...state.attemptOrder ?? []];
     await this.save();
   }
 

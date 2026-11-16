@@ -44,3 +44,35 @@ test('preview refuses an empty source and never expands external definitions', (
   assert.throws(() => preview('', 'text'), /empty/);
   assert.throws(() => preview('<!DOCTYPE x><x/>', 'xml'), /external/);
 });
+
+test('a managed import leaves legacy preview records and their bytes readable', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'mixed-import-'));
+  const source = await createSource({ scenario: 'feature' });
+  try {
+    const repository = await new Repository(directory).open();
+    await collect({ base: source.base, repository });
+    const legacy = repository.records().find(record => record.id === 'calls');
+    assert.ok(legacy.digest);
+    await collect({ base: source.base, repository, mode: 'managed' });
+    const reopened = await new Repository(directory).open();
+    const still = reopened.records().find(record => record.id === 'calls');
+    assert.equal(still.digest, legacy.digest);
+    assert.ok(await reopened.raw(still.digest));
+    assert.ok(reopened.records().some(record => record.id === 'learner-1:course-1:attempt-1'));
+  } finally { await source.close(); await rm(directory, { recursive: true, force: true }); }
+});
+
+test('a re-delivery of unchanged bytes is observed as 304 and reused', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'etag-import-'));
+  const source = await createSource({ scenario: 'feature' });
+  try {
+    const repository = await new Repository(directory).open();
+    const first = await collect({ base: source.base, repository, mode: 'managed' });
+    const second = await collect({ base: source.base, repository, mode: 'managed' });
+    assert.equal(second.added, 0);
+    assert.equal(second.complete, first.complete);
+    assert.equal(repository.snapshot().interpretation.calls.length, 9);
+    // The second pass must not retain new evidence for unchanged documents.
+    assert.equal(Object.keys(repository.snapshot().evidence).length, 2);
+  } finally { await source.close(); await rm(directory, { recursive: true, force: true }); }
+});
